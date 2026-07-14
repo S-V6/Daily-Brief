@@ -14,6 +14,11 @@ review.
    - **Google Calendar** — today's meetings + tomorrow's preview
    - **Fireflies** — summaries & action items from today's recorded meetings
    - **Gmail** — follow-up threads and `To respond` items
+   - **Airtable — "Meeting Intelligence" base (read-only)** — relational
+     context: which deal/pursuit, customer/agency, project, and portfolio
+     relationship a discussion concerns, plus tracked open/overdue action
+     items and prior decisions. The routine only *reads* this base and never
+     modifies it (enforced by a `deny` list in `.claude/settings.json`).
 4. It writes the brief to [`briefs/`](./briefs/) (one file per day) and
    creates a **Gmail draft** addressed per the runbook's CONFIG. It never
    auto-sends — Sean reviews and sends.

@@ -19,6 +19,19 @@ needs is here — do not assume prior conversation context.
 - **Output file:** `briefs/YYYY-MM-DD.md` (today's date, Eastern)
 - **Commit target branch:** `main`
 - **Gmail scope:** primary inbox, `newer_than:1d`, plus the `To respond` label.
+- **Airtable knowledge base:** the **"Meeting Intelligence"** base
+  (`app4jGLgUGWH1IzDO`) in workspace "My First Workspace". Used as a
+  **read-only** relational reference to enrich the brief (deals, customers,
+  projects, tracked action items, decisions, org relationships).
+
+> ⚠️ **AIRTABLE IS READ-ONLY. NEVER MODIFY IT.** Only ever call the Airtable
+> *read* tools: `list_bases`, `search_bases`, `list_tables_for_base`,
+> `get_table_schema`, `list_records_for_table`, `search_records`. You must
+> **never** call any Airtable tool that creates, updates, deletes, publishes,
+> comments, or reverts (`create_*`, `update_*`, `delete_*`,
+> `create_record_comment`, `publish_interface`, `revert_action`, etc.). The
+> base is a knowledge source only — its contents inform the writing; nothing
+> is ever written back.
 
 ---
 
@@ -55,6 +68,42 @@ Eastern. Sort chronologically. If none, say "No calendar events."
   (`labelId: Label_1`) regardless of age.
 - Summarize each as one line: sender — subject — why it matters. Cap at ~10.
 
+### 3.5 Meeting Intelligence — Airtable relational context (READ-ONLY)
+Pull structured context from the **"Meeting Intelligence"** base
+(`app4jGLgUGWH1IzDO`) to enrich the brief. **Read only — never write.**
+
+Tables (IDs are stable; use `get_table_schema` at runtime for singleSelect
+choice IDs before filtering on them):
+
+| Table | ID | Use |
+|-------|----|-----|
+| Meetings | `tblbDK2735FOHIkCM` | The intelligence hub — match today's meetings to catalogued records: `Meeting Type`, `Meeting Summary`, `Pursuits Discussed`, `Projects Discussed`, linked `Action Items`, `Decisions`. |
+| Action Items | `tblL93JO61XkX1825` | `Name`, `Status`, `Owner`, `Due Date`, `Scope`, `Pursuit`, `Project`, `Source Meeting`. |
+| Pursuits | `tblj7iQsbUNwSlUv7` | `Name`, `Stage`, `Owner`, `V6 Involvement`, `Customer`, `Sector`, `Notes on Pursuit`. |
+| Projects | `tbloway9lsITnegTG` | `Name`, `Status`, `Project Lead`, `Client`, `End Date`. |
+| Organizations | `tblV12iboJuVRc64Z` | `Name`, `Consulting Relationship`, `Investment Relationship` (labels a company as client / portfolio / partner / target). |
+| Customers | `tblC9W8cyPqOhYB9L` | `Name`, `Type`, `Sector` (DoD program offices / agencies). |
+| Decisions | `tblfv3wGj7B974OJl` | `Name`, `Type`, `Date Decided`, `Context`, `Pursuit`, `Project`, `Source Meeting`. |
+
+Suggested reads (all read-only):
+1. **Recent meetings** — `list_records_for_table` on Meetings filtered to
+   `Date` within the past few days (`isWithin` / `pastNumberOfDays`, Eastern).
+   Match them by title to today's Fireflies meetings so each meeting can be
+   annotated with its **Meeting Type**, linked **Pursuit(s)** and
+   **Project(s)**, and its catalogued **Action Items / Decisions** (often
+   cleaner than the raw transcript).
+2. **Open & due action items** — Action Items filtered to `Status` ≠ done
+   (resolve choice IDs via `get_table_schema`), especially those overdue or
+   due soon. These are tracked items beyond just today's meetings.
+3. **Deal / relationship context** — for Pursuits, Projects, Organizations,
+   and Customers linked from the above, resolve their names and key fields
+   (stage, relationship type, customer/agency) so the brief can say *which*
+   deal/portfolio company/agency a discussion concerns.
+
+Use this purely to **inform composition** — do not dump raw records. If the
+Airtable base is unreachable in a given run, note it briefly and continue
+with the transcript-derived content.
+
 ### 4. Compose the brief
 Write markdown in this structure:
 
@@ -62,13 +111,24 @@ Write markdown in this structure:
 # End-of-Day Brief — {Weekday}, {Month D, YYYY}
 
 ## 📅 Today's Meetings
-- HH:MM–HH:MM  Title — attendees (n)
+- HH:MM–HH:MM  Title — attendees (n)  [Deal/Project · Stage — from Airtable, if matched]
 
 ## 📝 Meeting Notes & Action Items
-### {Meeting title}
+### {Meeting title}  ·  {Meeting Type} — {Pursuit/Project · Customer, if linked in Airtable}
 - Summary: ...
 - Action items:
-  - [ ] owner — task
+  - [ ] owner — task  {(due date / status, if tracked in Airtable)}
+
+## 📌 Open & Overdue Action Items (tracked in Meeting Intelligence)
+- [ ] owner — task — due {date} · {Pursuit/Project} {(OVERDUE) if past due}
+  (Open items from the Airtable Action Items table — overdue first, then
+  due soonest. Cap at ~12; note if more remain.)
+
+## 🔗 Deal & Portfolio Context
+- {Pursuit} — Stage {stage}, Customer {customer/agency} — one line on why it
+  surfaced today. Label companies by relationship (client / portfolio /
+  partner / target) using the Organizations table.
+- Recent relevant Decisions (from the Decisions table), if any.
 
 ## ✉️ Follow-ups from the Inbox
 - Sender — Subject — why it matters
@@ -77,11 +137,16 @@ Write markdown in this structure:
 - HH:MM  Title
 
 ## ✅ Suggested EOD Actions
-- (synthesized: open action items + unreplied threads worth closing today)
+- (synthesized: overdue/near-due tracked action items + today's new action
+  items + unreplied threads worth closing today)
 ```
 
-Keep it tight and skimmable. Prefer bullets over prose. If a section has no
-content, write a short "Nothing today" line rather than omitting the header.
+Keep it tight and skimmable. Prefer bullets over prose. Fold the Airtable
+context into the meeting entries and the two relational sections — do not
+paste raw records or IDs. If a section has no content, write a short "Nothing
+today" line rather than omitting the header. The two Airtable-backed sections
+(📌 and 🔗) should be omitted gracefully (with a one-line note) only if the
+base was unreachable this run.
 
 ### 5. Save to the repo
 - Write the brief to `briefs/{TODAY}.md`.
@@ -106,10 +171,14 @@ rest rather than failing the whole brief.
 
 ## NOTES
 
-- **Headless auth caveat:** interactively-authenticated apps (Gmail, Calendar)
-  can occasionally be missing in a fully headless cron run. Always degrade
-  gracefully — produce the brief from whatever sources *are* available and note
-  the gap in the status.
+- **Headless auth caveat:** interactively-authenticated apps (Gmail, Calendar,
+  Airtable) can occasionally be missing in a fully headless cron run. Always
+  degrade gracefully — produce the brief from whatever sources *are* available
+  and note the gap in the status.
+- **Airtable is strictly read-only.** Never create, update, delete, comment on,
+  or publish anything in Airtable. If a task ever seems to require writing to
+  Airtable, stop and skip it — this runbook only *reads* the Meeting
+  Intelligence base.
 - **Idempotency:** if `briefs/{TODAY}.md` already exists, overwrite it and
   amend rather than creating a duplicate.
 - **No secrets in this repo.** All access comes from the environment's
