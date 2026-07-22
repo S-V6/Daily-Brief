@@ -175,6 +175,14 @@ rest rather than failing the whole brief.
   Airtable) can occasionally be missing in a fully headless cron run. Always
   degrade gracefully — produce the brief from whatever sources *are* available
   and note the gap in the status.
+- **Connector cold-start retry:** in a fresh headless session, Gmail/Calendar/
+  Airtable MCP connectors can still be finishing authentication when Step 1-3.5
+  first call them, which can surface as an immediate tool denial even though
+  the tool is allow-listed. Do not treat a first failure as "source
+  unavailable" — wait briefly (e.g. do other steps first, or pause a few
+  seconds) and retry each failed source once before falling back to the
+  graceful-degradation note. Only report a source as unavailable after that
+  retry also fails.
 - **Airtable is strictly read-only.** Never create, update, delete, comment on,
   or publish anything in Airtable. If a task ever seems to require writing to
   Airtable, stop and skip it — this runbook only *reads* the Meeting
