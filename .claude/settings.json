@@ -24,7 +24,10 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(git pull:*)",
-      "Bash(git fetch:*)"
+      "Bash(git fetch:*)",
+      "Bash(git status:*)",
+      "Bash(git checkout:*)",
+      "Write(briefs/*.md)"
     ],
     "deny": [
       "mcp__Airtable__create_base",
