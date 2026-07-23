@@ -148,10 +148,16 @@ today" line rather than omitting the header. The two Airtable-backed sections
 (📌 and 🔗) should be omitted gracefully (with a one-line note) only if the
 base was unreachable this run.
 
-### 5. Save to the repo
+### 5. Save to the repo — always land on `main`
 - Write the brief to `briefs/{TODAY}.md`.
-- Commit on `main`: `git add briefs/{TODAY}.md && git commit -m "EOD brief {TODAY}"`.
-- Push with `git push -u origin main` (retry with backoff on network error).
+- Stage and commit: `git add briefs/{TODAY}.md && git commit -m "EOD brief {TODAY}"`.
+- Push the commit to **`main`**, regardless of which branch the session started
+  on: `git push origin HEAD:main` (retry with backoff on network error).
+  > ⚠️ Do **not** assume you are on `main`. This routine's fresh session starts
+  > on an isolated working branch (e.g. `claude/…`), so a plain
+  > `git push origin main` pushes a stale `main` ref and strands the brief on
+  > the working branch. Always push `HEAD:main` so the new commit lands on
+  > `main` where the other briefs live.
 
 ### 6. Create the Gmail draft
 - `mcp__Gmail__create_draft` with:
