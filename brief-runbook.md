@@ -58,6 +58,12 @@ Eastern. Sort chronologically. If none, say "No calendar events."
 - For each, `mcp__Fireflies__fireflies_get_summary` (or
   `fireflies_get_transcript`) to pull the overview, key points, and
   **action items**. Attribute action items to owners where the summary does.
+- **"Chris" / "Kris" on a transcript:** in an investment-related discussion
+  (fund operations, LPs, rounds and allocations, SPVs, co-investors,
+  portfolio-company boards) a bare first name means **Kris Lichter** (V6
+  Operating Partner) — Fireflies usually spells him "Chris". In BD, pursuit or
+  Air Force advisor contexts it means **Chris Nowland**. A full name or email
+  sender always wins over this default.
 - If no meetings were recorded today, say "No recorded meetings today."
 
 ### 3. Gmail — notable threads / follow-ups
